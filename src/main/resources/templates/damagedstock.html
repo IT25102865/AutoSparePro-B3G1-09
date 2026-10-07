@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Damaged Stock - Auto Spare Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script th:src="@{/js/theme.js}"></script>
+</head>
+<body>
+<nav>
+    <span class="brand">Auto Spare Pro</span>
+    <a th:href="@{/}">Home</a>
+    <a th:href="@{/inventory}">Inventory</a>
+    <a th:href="@{/sales}">Sales</a>
+    <a th:href="@{/damaged-stock}">Damaged Stock</a>
+    <a th:href="@{/suppliers}">Suppliers</a>
+    <a th:href="@{/finance}">Finance</a>
+    <a th:href="@{/promotions}">Promotions</a>
+    <a th:href="@{/admin/users}">Users</a>
+    <a th:href="@{/admin/requests}">Requests</a>
+    <a th:href="@{/admin/payments}">Payments</a>
+    <a th:href="@{/catalog}">Catalog View</a>
+    <span class="nav-right">
+        <span class="nav-user">👤 <span th:text="${#authentication.name}"></span></span>
+        <form th:action="@{/logout}" method="post" class="logout-form">
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
+    </span>
+</nav>
+<div class="container">
+    <h1>Damaged Stock</h1>
+    <p class="subtitle">Customer damage claims move through Verify → Refund/Replace/Reject. Internal warehouse damage can be logged directly.</p>
+
+    <p class="error-msg" th:if="${error}" th:text="${error}"></p>
+    <p class="logout-msg" th:if="${success}" th:text="${success}"></p>
+
+    <div class="card">
+        <h3>Log Internal Damaged Stock</h3>
+        <p class="subtitle" style="margin-bottom:14px;">For damage found in the warehouse — not a customer claim, so it doesn't go through the review workflow.</p>
+        <form class="add-form" th:action="@{/damaged-stock/log-internal}" th:object="${item}" method="post">
+            <div class="field">
+                <label>Part Number</label>
+                <input type="text" th:field="*{partNumber}" th:classappend="${#fields.hasErrors('partNumber')} ? 'input-error'" required>
+                <span class="field-error" th:if="${#fields.hasErrors('partNumber')}" th:errors="*{partNumber}"></span>
+            </div>
+            <div class="field">
+                <label>Quantity</label>
+                <input type="number" th:field="*{quantity}" th:classappend="${#fields.hasErrors('quantity')} ? 'input-error'" min="1" required>
+                <span class="field-error" th:if="${#fields.hasErrors('quantity')}" th:errors="*{quantity}"></span>
+            </div>
+            <div class="field">
+                <label>Reason</label>
+                <input type="text" th:field="*{reason}" th:classappend="${#fields.hasErrors('reason')} ? 'input-error'" placeholder="e.g. water damage in storage" required>
+                <span class="field-error" th:if="${#fields.hasErrors('reason')}" th:errors="*{reason}"></span>
+            </div>
+            <button type="submit">Log Item</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3>All Damaged Items</h3>
+        <table>
+            <thead>
+            <tr>
+                <th>Part Number</th>
+                <th>Quantity</th>
+                <th>Date Logged</th>
+                <th>Reason</th>
+                <th>Source</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${items.isEmpty()}" class="empty-row">
+                <td colspan="7">No damaged items logged yet.</td>
+            </tr>
+            <tr th:each="d : ${items}">
+                <td th:text="${d.partNumber}"></td>
+                <td th:text="${d.quantity}"></td>
+                <td th:text="${d.dateLogged}"></td>
+                <td th:text="${d.reason}"></td>
+                <td>
+                    <span class="tag tag-category" th:if="${d.paymentId != null}" th:text="'Claim by ' + ${d.reportedBy}"></span>
+                    <span class="tag" th:if="${d.paymentId == null}">Internal</span>
+                </td>
+                <td th:switch="${d.status != null ? d.status.name() : ''}">
+                    <span class="stock-badge low-stock" th:case="'REPORTED'" th:text="${d.status}"></span>
+                    <span class="stock-badge in-stock" th:case="'VERIFIED'" th:text="${d.status}"></span>
+                    <span class="status-badge status-refunded" th:case="'REFUNDED'" th:text="${d.status}"></span>
+                    <span class="status-badge status-completed" th:case="'REPLACED'" th:text="${d.status}"></span>
+                    <span class="stock-badge out-stock" th:case="'REJECTED'" th:text="${d.status}"></span>
+                    <span th:case="*">—</span>
+                </td>
+                <td class="actions">
+                    <form th:if="${d.status != null and d.status.name() == 'REPORTED'}" th:action="@{'/damaged-stock/' + ${d.id} + '/verify'}" method="post" style="margin:0;">
+                        <button type="submit" class="edit-link">Verify</button>
+                    </form>
+                    <form th:if="${d.status != null and (d.status.name() == 'VERIFIED' and d.paymentId != null)}" th:action="@{'/damaged-stock/' + ${d.id} + '/refund'}" method="post" style="margin:0;" onsubmit="return confirm('Refund this customer\'s payment?');">
+                        <button type="submit" class="edit-link">Refund</button>
+                    </form>
+                    <form th:if="${d.status != null and d.status.name() == 'VERIFIED'}" th:action="@{'/damaged-stock/' + ${d.id} + '/replace'}" method="post" style="margin:0;" onsubmit="return confirm('Issue a replacement from stock?');">
+                        <button type="submit" class="edit-link">Replace</button>
+                    </form>
+                    <form th:if="${d.status != null and (d.status.name() == 'REPORTED' or d.status.name() == 'VERIFIED')}" th:action="@{'/damaged-stock/' + ${d.id} + '/reject'}" method="post" style="margin:0;">
+                        <button type="submit" class="logout-btn">Reject</button>
+                    </form>
+                    <form th:action="@{'/damaged-stock/delete/' + ${d.id}}" method="post" style="margin:0;" onsubmit="return confirm('Delete this record?');">
+                        <button type="submit" class="logout-btn">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>
