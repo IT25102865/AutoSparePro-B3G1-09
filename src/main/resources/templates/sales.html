@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Sales - Auto Spare Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script th:src="@{/js/theme.js}"></script>
+</head>
+<body>
+<nav>
+    <span class="brand">Auto Spare Pro</span>
+    <a th:href="@{/}">Home</a>
+    <a th:href="@{/inventory}">Inventory</a>
+    <a th:href="@{/sales}">Sales</a>
+    <a th:href="@{/damaged-stock}">Damaged Stock</a>
+    <a th:href="@{/suppliers}">Suppliers</a>
+    <a th:href="@{/finance}">Finance</a>
+    <a th:href="@{/promotions}">Promotions</a>
+    <a th:href="@{/admin/users}">Users</a>
+    <a th:href="@{/admin/requests}">Requests</a>
+    <a th:href="@{/admin/payments}">Payments</a>
+    <a th:href="@{/catalog}">Catalog View</a>
+    <span class="nav-right">
+        <span class="nav-user">👤 <span th:text="${#authentication.name}"></span></span>
+        <form th:action="@{/logout}" method="post" class="logout-form">
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
+    </span>
+</nav>
+<div class="container">
+    <h1>Sales</h1>
+    <p class="subtitle">Record customer invoices</p>
+
+    <div class="card">
+        <h3 th:text="${invoice.id == null ? 'New Invoice' : 'Edit Invoice'}">New Invoice</h3>
+        <form class="add-form" th:action="@{/sales/add}" th:object="${invoice}" method="post">
+            <input type="hidden" th:field="*{id}" th:if="${invoice.id != null}">
+            <div class="field">
+                <label>Invoice Number</label>
+                <input type="text" th:field="*{invoiceNumber}" th:classappend="${#fields.hasErrors('invoiceNumber')} ? 'input-error'" required>
+                <span class="field-error" th:if="${#fields.hasErrors('invoiceNumber')}" th:errors="*{invoiceNumber}"></span>
+            </div>
+            <div class="field">
+                <label>Customer Name</label>
+                <input type="text" th:field="*{customerName}" th:classappend="${#fields.hasErrors('customerName')} ? 'input-error'" required>
+                <span class="field-error" th:if="${#fields.hasErrors('customerName')}" th:errors="*{customerName}"></span>
+            </div>
+            <div class="field">
+                <label>Total Amount (LKR)</label>
+                <input type="number" step="0.01" th:field="*{totalAmount}" th:classappend="${#fields.hasErrors('totalAmount')} ? 'input-error'" required>
+                <span class="field-error" th:if="${#fields.hasErrors('totalAmount')}" th:errors="*{totalAmount}"></span>
+            </div>
+            <div class="field">
+                <label>Discount (LKR)</label>
+                <input type="number" step="0.01" th:field="*{discount}" th:classappend="${#fields.hasErrors('discount')} ? 'input-error'">
+                <span class="field-error" th:if="${#fields.hasErrors('discount')}" th:errors="*{discount}"></span>
+            </div>
+            <div class="field">
+                <label>Payment Method</label>
+                <input type="text" th:field="*{paymentMethod}">
+            </div>
+            <div class="field">
+                <label>Date</label>
+                <input type="date" th:field="*{date}" th:max="${#temporals.format(#temporals.createToday(), 'yyyy-MM-dd')}"
+                       th:classappend="${#fields.hasErrors('date')} ? 'input-error'">
+                <span class="field-error" th:if="${#fields.hasErrors('date')}" th:errors="*{date}"></span>
+            </div>
+            <button type="submit" th:text="${invoice.id == null ? 'Add Invoice' : 'Update Invoice'}">Add Invoice</button>
+            <a th:if="${invoice.id != null}" th:href="@{/sales}" class="cancel-link">Cancel</a>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3>All Invoices</h3>
+        <table>
+            <thead>
+            <tr>
+                <th>Invoice #</th>
+                <th>Customer</th>
+                <th>Total</th>
+                <th>Discount</th>
+                <th>Payment Method</th>
+                <th>Date</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${invoices.isEmpty()}" class="empty-row">
+                <td colspan="7">No invoices yet.</td>
+            </tr>
+            <tr th:each="i : ${invoices}">
+                <td th:text="${i.invoiceNumber}"></td>
+                <td th:text="${i.customerName}"></td>
+                <td th:text="${@money.format(i.totalAmount)}"></td>
+                <td th:text="${@money.format(i.discount)}"></td>
+                <td th:text="${i.paymentMethod}"></td>
+                <td th:text="${i.date}"></td>
+                <td class="actions">
+                    <a th:href="@{'/sales/edit/' + ${i.id}}" class="edit-link">Edit</a>
+                    <form th:action="@{'/sales/delete/' + ${i.id}}" method="post" style="display:inline; margin:0;">
+                        <button type="submit" class="logout-btn">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>
