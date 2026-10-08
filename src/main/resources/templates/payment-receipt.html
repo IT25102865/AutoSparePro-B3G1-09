@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Receipt - Auto Spare Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script th:src="@{/js/theme.js}"></script>
+</head>
+<body>
+<nav>
+    <span class="brand">Auto Spare Pro</span>
+    <a th:href="@{/catalog}">Catalog</a>
+    <a th:href="@{/my-requests}">My Requests</a>
+    <a th:href="@{/my-purchases}">My Purchases</a>
+    <a th:href="@{/quote}">My Quote</a>
+    <a th:href="@{/cart}">Cart<span th:if="${cartItemCount > 0}" class="cart-count" th:text="${cartItemCount}"></span></a>
+    <a th:href="@{/account}">Account</a>
+    <a sec:authorize="hasRole('ADMIN')" th:href="@{/}">Admin Dashboard</a>
+    <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/payments}">Payments</a>
+    <span class="nav-right">
+        <span class="nav-user">👤 <span th:text="${#authentication.name}"></span></span>
+        <form th:action="@{/logout}" method="post" class="logout-form">
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
+    </span>
+</nav>
+<div class="container">
+    <h1>Receipt</h1>
+    <p class="subtitle" th:if="${param.success}">Payment processed successfully — thank you!</p>
+
+    <div class="card receipt-card" th:if="${payment != null}">
+        <div class="receipt-top">
+            <div class="receipt-icon">✓</div>
+            <div class="receipt-amount" th:text="${@money.format(payment.amount)}"></div>
+            <span th:switch="${payment.status.name()}">
+                <span class="status-badge status-completed" th:case="'COMPLETED'" th:text="${payment.status}"></span>
+                <span class="status-badge status-pending" th:case="'PENDING'" th:text="${payment.status}"></span>
+                <span class="status-badge status-refunded" th:case="'REFUNDED'" th:text="${payment.status}"></span>
+                <span class="status-badge status-failed" th:case="*" th:text="${payment.status}"></span>
+            </span>
+        </div>
+
+        <div class="receipt-row">
+            <span class="r-key">Payment ID</span>
+            <span class="r-val" th:text="'#' + ${payment.id}"></span>
+        </div>
+        <div class="receipt-row">
+            <span class="r-key">Invoice</span>
+            <span class="r-val" th:text="${payment.invoiceNumber}"></span>
+        </div>
+        <div class="receipt-row" sec:authorize="hasRole('ADMIN')">
+            <span class="r-key">Customer</span>
+            <span class="r-val" th:text="${payment.username}"></span>
+        </div>
+        <div class="receipt-row">
+            <span class="r-key">Payment Method</span>
+            <span class="r-val" th:text="${payment.paymentMethod}"></span>
+        </div>
+        <div class="receipt-row">
+            <span class="r-key">Card</span>
+            <span class="r-val" th:text="${payment.cardType} + ' **** ' + ${payment.cardLast4}"></span>
+        </div>
+        <div class="receipt-row">
+            <span class="r-key">Cardholder</span>
+            <span class="r-val" th:text="${payment.cardHolderName}"></span>
+        </div>
+        <div class="receipt-row">
+            <span class="r-key">Date</span>
+            <span class="r-val" th:text="${payment.paymentDate}"></span>
+        </div>
+
+        <div class="receipt-actions">
+            <a sec:authorize="!hasRole('ADMIN')" th:href="@{/my-requests}" class="edit-link">← My Requests</a>
+            <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/payments}" class="edit-link">← All Payments</a>
+        </div>
+    </div>
+
+    <div class="card" th:if="${payment == null}">
+        <p class="subtitle" style="margin:0;">Payment not found, or you don't have access to view it.</p>
+    </div>
+</div>
+</body>
+</html>

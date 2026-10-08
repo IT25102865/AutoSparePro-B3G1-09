@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Sign Up - Auto Spare Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script th:src="@{/js/theme.js}"></script>
+</head>
+<body class="login-body">
+<div class="login-wrapper">
+    <div class="login-card">
+        <div class="login-brand">Auto Spare Pro</div>
+        <p class="subtitle">Create your customer account</p>
+
+        <p class="error-msg" th:if="${error}" th:text="${error}"></p>
+
+        <form th:action="@{/signup}" method="post" class="login-form">
+            <div class="field">
+                <label>Username</label>
+                <input type="text" name="username" required autofocus>
+            </div>
+            <div class="field">
+                <label>Password</label>
+                <input type="password" name="password" required minlength="6">
+            </div>
+            <div class="field">
+                <label>Confirm Password</label>
+                <input type="password" name="confirmPassword" required minlength="6">
+            </div>
+            <button type="submit">Create Account</button>
+        </form>
+
+        <div class="signup-prompt">
+            Already have an account? <a th:href="@{/login}">Sign in</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

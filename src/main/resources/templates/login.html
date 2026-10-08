@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - Auto Spare Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script th:src="@{/js/theme.js}"></script>
+</head>
+<body class="login-body">
+<div class="login-wrapper">
+    <div class="login-card">
+        <div class="login-brand">Auto Spare Pro</div>
+        <p class="subtitle">Sign in to continue</p>
+
+        <p class="error-msg" th:if="${param.error}">Invalid username or password.</p>
+        <p class="logout-msg" th:if="${param.logout}">You have been logged out.</p>
+        <p class="logout-msg" th:if="${param.registered}">Account created successfully. Please sign in.</p>
+
+        <form th:action="@{/login}" method="post" class="login-form">
+            <div class="field">
+                <label>Username</label>
+                <input type="text" name="username" required autofocus>
+            </div>
+            <div class="field">
+                <label>Password</label>
+                <input type="password" name="password" required>
+            </div>
+            <button type="submit">Sign In</button>
+        </form>
+
+        <div class="signup-prompt">
+            New customer? <a th:href="@{/signup}">Create an account</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

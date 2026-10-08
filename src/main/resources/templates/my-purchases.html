@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>My Purchases - Auto Spare Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script th:src="@{/js/theme.js}"></script>
+</head>
+<body>
+<nav>
+    <span class="brand">Auto Spare Pro</span>
+    <a th:href="@{/catalog}">Catalog</a>
+    <a th:href="@{/my-requests}">My Requests</a>
+    <a th:href="@{/my-purchases}">My Purchases</a>
+    <a th:href="@{/quote}">My Quote</a>
+    <a th:href="@{/cart}">Cart<span th:if="${cartItemCount > 0}" class="cart-count" th:text="${cartItemCount}"></span></a>
+    <a th:href="@{/account}">Account</a>
+    <a sec:authorize="hasRole('ADMIN')" th:href="@{/}">Admin Dashboard</a>
+    <span class="nav-right">
+        <span class="nav-user">👤 <span th:text="${#authentication.name}"></span></span>
+        <form th:action="@{/logout}" method="post" class="logout-form">
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
+    </span>
+</nav>
+<div class="container">
+    <h1>My Purchases</h1>
+    <p class="subtitle">Items you've bought and paid for. Found a problem with one? Report it here.</p>
+
+    <p class="logout-msg" th:if="${param.reported}">Your damage report has been submitted for review.</p>
+    <p class="error-msg" th:if="${error}" th:text="${error}"></p>
+    <p class="logout-msg" th:if="${success}" th:text="${success}"></p>
+
+    <div class="card">
+        <table>
+            <thead>
+            <tr>
+                <th>Part</th>
+                <th>Part Number</th>
+                <th>Qty</th>
+                <th>Amount Paid</th>
+                <th>Date</th>
+                <th>Damage Report</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${purchases.isEmpty()}" class="empty-row">
+                <td colspan="6">You haven't completed any purchases yet. <a th:href="@{/catalog}">Browse the catalog</a>.</td>
+            </tr>
+            <tr th:each="p : ${purchases}">
+                <td th:text="${p.partName}"></td>
+                <td th:text="${p.partNumber}"></td>
+                <td th:text="${p.quantity}"></td>
+                <td th:text="${@money.format(p.amount)}"></td>
+                <td th:text="${p.purchaseDate}"></td>
+                <td>
+                    <button type="button" class="report-btn purchase-report-btn"
+                            th:unless="${p.alreadyReported}"
+                            th:attr="data-paymentid=${p.paymentId}, data-partnumber=${p.partNumber}, data-partname=${p.partName}, data-qty=${p.quantity}">Report Damage</button>
+                    <span class="tag tag-category" th:if="${p.alreadyReported}" th:text="${p.claimStatus}"></span>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="reportModal" class="modal-overlay" style="display:none;">
+    <div class="modal-card">
+        <h3>Report Damaged Item</h3>
+        <p class="subtitle" id="reportPartLabel"></p>
+        <form th:action="@{/my-purchases/report-damage}" method="post">
+            <input type="hidden" name="paymentId" id="reportPaymentId">
+            <input type="hidden" name="partNumber" id="reportPartNumber">
+            <div class="field">
+                <label>Quantity Affected</label>
+                <input type="number" name="quantity" id="reportQuantity" min="1" value="1" required>
+            </div>
+            <div class="field">
+                <label>Reason / Description</label>
+                <input type="text" name="reason" placeholder="e.g. cracked casing on arrival">
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="cancel-link" id="reportCancelBtn">Cancel</button>
+                <button type="submit">Submit Report</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    var reportModal = document.getElementById('reportModal');
+    document.querySelectorAll('.purchase-report-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var qty = btn.getAttribute('data-qty') || '1';
+            document.getElementById('reportPaymentId').value = btn.getAttribute('data-paymentid');
+            document.getElementById('reportPartNumber').value = btn.getAttribute('data-partnumber');
+            document.getElementById('reportQuantity').max = qty;
+            document.getElementById('reportQuantity').value = 1;
+            document.getElementById('reportPartLabel').textContent = btn.getAttribute('data-partname') + ' (purchased: ' + qty + ')';
+            reportModal.style.display = 'flex';
+        });
+    });
+    document.getElementById('reportCancelBtn').addEventListener('click', function () {
+        reportModal.style.display = 'none';
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Promotions - Auto Spare Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script th:src="@{/js/theme.js}"></script>
+</head>
+<body>
+<nav>
+    <span class="brand">Auto Spare Pro</span>
+    <a th:href="@{/}">Home</a>
+    <a th:href="@{/inventory}">Inventory</a>
+    <a th:href="@{/sales}">Sales</a>
+    <a th:href="@{/damaged-stock}">Damaged Stock</a>
+    <a th:href="@{/suppliers}">Suppliers</a>
+    <a th:href="@{/finance}">Finance</a>
+    <a th:href="@{/promotions}">Promotions</a>
+    <a th:href="@{/admin/users}">Users</a>
+    <a th:href="@{/admin/requests}">Requests</a>
+    <a th:href="@{/admin/payments}">Payments</a>
+    <a th:href="@{/catalog}">Catalog View</a>
+    <span class="nav-right">
+        <span class="nav-user">👤 <span th:text="${#authentication.name}"></span></span>
+        <form th:action="@{/logout}" method="post" class="logout-form">
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
+    </span>
+</nav>
+<div class="container">
+    <h1>Promotions</h1>
+    <p class="subtitle">Create and manage discount campaigns</p>
+
+    <div class="card">
+        <h3 th:text="${promotion.id == null ? 'New Promotion' : 'Edit Promotion'}">New Promotion</h3>
+        <form class="add-form" th:action="@{/promotions/add}" th:object="${promotion}" method="post">
+            <input type="hidden" th:field="*{id}" th:if="${promotion.id != null}">
+            <div class="field">
+                <label>Name</label>
+                <input type="text" th:field="*{name}" th:classappend="${#fields.hasErrors('name')} ? 'input-error'" required>
+                <span class="field-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></span>
+            </div>
+            <div class="field">
+                <label>Discount %</label>
+                <input type="number" step="0.01" th:field="*{discountPercentage}" th:classappend="${#fields.hasErrors('discountPercentage')} ? 'input-error'" required>
+                <span class="field-error" th:if="${#fields.hasErrors('discountPercentage')}" th:errors="*{discountPercentage}"></span>
+            </div>
+            <div class="field">
+                <label>Category</label>
+                <select th:field="*{category}">
+                    <option value="">Storewide (all categories)</option>
+                    <option th:each="c : ${categories}" th:value="${c}" th:text="${c}"></option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Start Date</label>
+                <input type="date" id="startDate" th:field="*{startDate}"
+                       th:attr="min=${startLocked ? null : today}" th:readonly="${startLocked}"
+                       th:classappend="${#fields.hasErrors('startDate')} ? 'input-error'"
+                       th:title="${startLocked} ? 'This promotion has already started, so its start date is fixed.'">
+                <span class="field-error" th:if="${#fields.hasErrors('startDate')}" th:errors="*{startDate}"></span>
+            </div>
+            <div class="field">
+                <label>End Date</label>
+                <input type="date" id="endDate" th:field="*{endDate}"
+                       th:attr="min=${endPast ? null : today}"
+                       th:classappend="${#fields.hasErrors('endDate')} ? 'input-error'">
+                <span class="field-error" th:if="${#fields.hasErrors('endDate')}" th:errors="*{endDate}"></span>
+            </div>
+            <button type="submit" th:text="${promotion.id == null ? 'Add Promotion' : 'Update Promotion'}">Add Promotion</button>
+            <a th:if="${promotion.id != null}" th:href="@{/promotions}" class="cancel-link">Cancel</a>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3>All Promotions</h3>
+        <table>
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Discount %</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${promotions.isEmpty()}" class="empty-row">
+                <td colspan="6">No promotions created yet.</td>
+            </tr>
+            <tr th:each="p : ${promotions}">
+                <td th:text="${p.name}"></td>
+                <td>
+                    <span class="tag tag-category" th:if="${p.category != null}" th:text="${p.category}"></span>
+                    <span class="nav-user" th:if="${p.category == null}">Storewide</span>
+                </td>
+                <td th:text="${p.discountPercentage}"></td>
+                <td th:text="${p.startDate}"></td>
+                <td th:text="${p.endDate}"></td>
+                <td class="actions">
+                    <a th:href="@{'/promotions/edit/' + ${p.id}}" class="edit-link">Edit</a>
+                    <form th:action="@{'/promotions/delete/' + ${p.id}}" method="post" style="display:inline; margin:0;">
+                        <button type="submit" class="logout-btn">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // The end date can't be earlier than the start date (nor than today, which the min above already covers).
+    (function () {
+        var start = document.getElementById('startDate');
+        var end = document.getElementById('endDate');
+        if (!start || !end || !end.min) return;
+        var floor = end.min;
+        function syncEndMin() {
+            end.min = (start.value && start.value > floor) ? start.value : floor;
+        }
+        start.addEventListener('change', syncEndMin);
+        syncEndMin();
+    })();
+</script>
+</body>
+</html>

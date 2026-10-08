@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Suppliers - Auto Spare Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script th:src="@{/js/theme.js}"></script>
+</head>
+<body>
+<nav>
+    <span class="brand">Auto Spare Pro</span>
+    <a th:href="@{/}">Home</a>
+    <a th:href="@{/inventory}">Inventory</a>
+    <a th:href="@{/sales}">Sales</a>
+    <a th:href="@{/damaged-stock}">Damaged Stock</a>
+    <a th:href="@{/suppliers}">Suppliers</a>
+    <a th:href="@{/finance}">Finance</a>
+    <a th:href="@{/promotions}">Promotions</a>
+    <a th:href="@{/admin/users}">Users</a>
+    <a th:href="@{/admin/requests}">Requests</a>
+    <a th:href="@{/admin/payments}">Payments</a>
+    <a th:href="@{/catalog}">Catalog View</a>
+    <span class="nav-right">
+        <span class="nav-user">👤 <span th:text="${#authentication.name}"></span></span>
+        <form th:action="@{/logout}" method="post" class="logout-form">
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
+    </span>
+</nav>
+<div class="container">
+    <h1>Suppliers</h1>
+    <p class="subtitle">Maintain supplier contact and part records</p>
+
+    <div class="card">
+        <h3 th:text="${supplier.id == null ? 'Add Supplier' : 'Edit Supplier'}">Add Supplier</h3>
+        <form class="add-form" th:action="@{/suppliers/add}" th:object="${supplier}" method="post">
+            <input type="hidden" th:field="*{id}" th:if="${supplier.id != null}">
+            <div class="field">
+                <label>Name</label>
+                <input type="text" th:field="*{name}" th:classappend="${#fields.hasErrors('name')} ? 'input-error'" required>
+                <span class="field-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></span>
+            </div>
+            <div class="field">
+                <label>Contact Number</label>
+                <input type="text" th:field="*{contactNumber}" th:classappend="${#fields.hasErrors('contactNumber')} ? 'input-error'"
+                       placeholder="e.g. 077 123 4567" inputmode="tel">
+                <span class="field-error" th:if="${#fields.hasErrors('contactNumber')}" th:errors="*{contactNumber}"></span>
+            </div>
+            <div class="field">
+                <label>Parts Supplied (notes)</label>
+                <input type="text" th:field="*{partsSupplied}" placeholder="free-text notes, optional">
+            </div>
+            <div class="field">
+                <label>Supplied Categories</label>
+                <div class="brand-checklist">
+                    <label class="brand-check" th:each="c : ${categories}">
+                        <input type="checkbox" th:field="*{suppliedCategories}" th:value="${c}">
+                        <span th:text="${c}"></span>
+                    </label>
+                </div>
+            </div>
+            <button type="submit" th:text="${supplier.id == null ? 'Add Supplier' : 'Update Supplier'}">Add Supplier</button>
+            <a th:if="${supplier.id != null}" th:href="@{/suppliers}" class="cancel-link">Cancel</a>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3>All Suppliers</h3>
+        <table>
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Contact Number</th>
+                <th>Categories</th>
+                <th>Notes</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${suppliers.isEmpty()}" class="empty-row">
+                <td colspan="5">No suppliers added yet.</td>
+            </tr>
+            <tr th:each="s : ${suppliers}">
+                <td th:text="${s.name}"></td>
+                <td th:text="${s.contactNumber}"></td>
+                <td>
+                    <span class="tag tag-category" th:each="c : ${s.suppliedCategories}" th:text="${c}"></span>
+                    <span th:if="${s.suppliedCategories.isEmpty()}" class="nav-user">—</span>
+                </td>
+                <td th:text="${s.partsSupplied}"></td>
+                <td class="actions">
+                    <a th:href="@{'/suppliers/edit/' + ${s.id}}" class="edit-link">Edit</a>
+                    <form th:action="@{'/suppliers/delete/' + ${s.id}}" method="post" style="display:inline; margin:0;">
+                        <button type="submit" class="logout-btn">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

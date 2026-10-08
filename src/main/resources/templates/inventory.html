@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Inventory - Auto Spare Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script th:src="@{/js/theme.js}"></script>
+</head>
+<body>
+<nav>
+    <span class="brand">Auto Spare Pro</span>
+    <a th:href="@{/}">Home</a>
+    <a th:href="@{/inventory}">Inventory</a>
+    <a th:href="@{/sales}">Sales</a>
+    <a th:href="@{/damaged-stock}">Damaged Stock</a>
+    <a th:href="@{/suppliers}">Suppliers</a>
+    <a th:href="@{/finance}">Finance</a>
+    <a th:href="@{/promotions}">Promotions</a>
+    <a th:href="@{/admin/users}">Users</a>
+    <a th:href="@{/admin/requests}">Requests</a>
+    <a th:href="@{/admin/payments}">Payments</a>
+    <a th:href="@{/catalog}">Catalog View</a>
+    <span class="nav-right">
+        <span class="nav-user">👤 <span th:text="${#authentication.name}"></span></span>
+        <form th:action="@{/logout}" method="post" class="logout-form">
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
+    </span>
+</nav>
+<div class="container">
+    <h1>Inventory</h1>
+    <p class="subtitle">Register spare parts and track stock levels</p>
+
+    <div class="card lowstock-card" th:if="${!lowStockParts.isEmpty()}">
+        <h3>⚠ Low Stock Alerts</h3>
+        <table>
+            <thead>
+            <tr>
+                <th>Part</th>
+                <th>Qty / Reorder Level</th>
+                <th>Matching Suppliers</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="p : ${lowStockParts}">
+                <td th:text="${p.partName} + ' (' + ${p.partNumber} + ')'"></td>
+                <td>
+                    <span class="stock-badge" th:classappend="${p.quantity == 0} ? ' out-stock' : ' low-stock'"
+                          th:text="${p.quantity} + ' / ' + ${p.reorderLevel}"></span>
+                </td>
+                <td>
+                    <span th:each="s, iter : ${lowStockSuppliers.get(p.id)}">
+                        <span th:text="${s.name} + (${s.contactNumber} != null and !${#strings.isEmpty(s.contactNumber)} ? ' (' + ${s.contactNumber} + ')' : '')"></span><span th:unless="${iter.last}">, </span>
+                    </span>
+                    <span th:if="${lowStockSuppliers.get(p.id) == null or lowStockSuppliers.get(p.id).isEmpty()}" class="nav-user">No matching supplier on file</span>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h3 th:text="${part.id == null ? 'Add New Part' : 'Edit Part'}">Add New Part</h3>
+        <form class="add-form" th:action="@{/inventory/add}" th:object="${part}" method="post">
+            <input type="hidden" th:field="*{id}" th:if="${part.id != null}">
+            <div class="field">
+                <label>Part Number</label>
+                <input type="text" th:field="*{partNumber}" th:classappend="${#fields.hasErrors('partNumber')} ? 'input-error'" required>
+                <span class="field-error" th:if="${#fields.hasErrors('partNumber')}" th:errors="*{partNumber}"></span>
+            </div>
+            <div class="field">
+                <label>Part Name</label>
+                <input type="text" th:field="*{partName}" th:classappend="${#fields.hasErrors('partName')} ? 'input-error'" required>
+                <span class="field-error" th:if="${#fields.hasErrors('partName')}" th:errors="*{partName}"></span>
+            </div>
+            <div class="field">
+                <label>Brand</label>
+                <input type="text" th:field="*{brand}">
+            </div>
+            <div class="field">
+                <label>Vehicle Model</label>
+                <input type="text" th:field="*{vehicleModel}">
+            </div>
+            <div class="field">
+                <label>Category</label>
+                <select th:field="*{category}">
+                    <option value="">— none —</option>
+                    <option th:each="c : ${categories}" th:value="${c}" th:text="${c}"></option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Quantity</label>
+                <input type="number" th:field="*{quantity}" th:classappend="${#fields.hasErrors('quantity')} ? 'input-error'" required>
+                <span class="field-error" th:if="${#fields.hasErrors('quantity')}" th:errors="*{quantity}"></span>
+            </div>
+            <div class="field">
+                <label>Reorder Level</label>
+                <input type="number" th:field="*{reorderLevel}" th:classappend="${#fields.hasErrors('reorderLevel')} ? 'input-error'">
+                <span class="field-error" th:if="${#fields.hasErrors('reorderLevel')}" th:errors="*{reorderLevel}"></span>
+            </div>
+            <div class="field">
+                <label>Price (LKR)</label>
+                <input type="number" step="0.01" th:field="*{price}" th:classappend="${#fields.hasErrors('price')} ? 'input-error'" required>
+                <span class="field-error" th:if="${#fields.hasErrors('price')}" th:errors="*{price}"></span>
+            </div>
+            <div class="field field-image">
+                <label for="imageUrl">Image URL</label>
+                <div class="image-field-row">
+                    <div class="image-preview" id="imagePreview" th:classappend="${part.imageUrl != null and !#strings.isEmpty(part.imageUrl)} ? 'has-image'">
+                        <img th:if="${part.imageUrl != null and !#strings.isEmpty(part.imageUrl)}" th:src="${part.imageUrl}"
+                             alt="Preview" referrerpolicy="no-referrer">
+                        <span th:unless="${part.imageUrl != null and !#strings.isEmpty(part.imageUrl)}">🖼</span>
+                    </div>
+                    <div class="image-input-group">
+                        <input type="text" id="imageUrl" th:field="*{imageUrl}" autocomplete="off"
+                               th:classappend="${#fields.hasErrors('imageUrl')} ? 'input-error'"
+                               th:attr="data-preview-url=@{/inventory/image-preview}"
+                               placeholder="Paste an image link, Google Drive link, or a product page link">
+                        <button type="button" id="fetchImageBtn" class="btn-secondary">Fetch</button>
+                    </div>
+                </div>
+                <span class="field-hint" id="imageHint">Right-click any picture online → <em>Copy image address</em>, paste it here, and hit Fetch.</span>
+                <span class="field-error" th:if="${#fields.hasErrors('imageUrl')}" th:errors="*{imageUrl}"></span>
+            </div>
+            <button type="submit" th:text="${part.id == null ? 'Add Part' : 'Update Part'}">Add Part</button>
+            <a th:if="${part.id != null}" th:href="@{/inventory}" class="cancel-link">Cancel</a>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3>All Parts</h3>
+        <table>
+            <thead>
+            <tr>
+                <th>Image</th>
+                <th>Part Number</th>
+                <th>Name</th>
+                <th>Brand</th>
+                <th>Vehicle Model</th>
+                <th>Category</th>
+                <th>Qty</th>
+                <th>Reorder Level</th>
+                <th>Price</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${parts.isEmpty()}" class="empty-row">
+                <td colspan="10">No parts registered yet.</td>
+            </tr>
+            <tr th:each="p : ${parts}">
+                <td>
+                    <img th:if="${p.imageUrl != null and !#strings.isEmpty(p.imageUrl)}" th:src="${p.imageUrl}" class="thumb"
+                         th:alt="${p.partName}" loading="lazy" referrerpolicy="no-referrer">
+                    <div class="thumb-ph">🔧</div>
+                </td>
+                <td th:text="${p.partNumber}"></td>
+                <td th:text="${p.partName}"></td>
+                <td th:text="${p.brand}"></td>
+                <td th:text="${p.vehicleModel}"></td>
+                <td><span class="tag tag-category" th:if="${p.category}" th:text="${p.category}"></span></td>
+                <td th:text="${p.quantity}"></td>
+                <td th:text="${p.reorderLevel}"></td>
+                <td th:text="${@money.format(p.price)}"></td>
+                <td class="actions">
+                    <a th:href="@{'/inventory/edit/' + ${p.id}}" class="edit-link">Edit</a>
+                    <form th:action="@{'/inventory/delete/' + ${p.id}}" method="post" style="display:inline; margin:0;">
+                        <button type="submit" class="logout-btn">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    (function () {
+        var input = document.getElementById('imageUrl');
+        var btn = document.getElementById('fetchImageBtn');
+        var hint = document.getElementById('imageHint');
+        var preview = document.getElementById('imagePreview');
+        var defaultHint = hint.innerHTML;
+        var lastChecked = input.value;
+
+        function setHint(text, cls) {
+            hint.className = 'field-hint' + (cls ? ' ' + cls : '');
+            hint.textContent = text;
+        }
+
+        function showPreview(url) {
+            preview.innerHTML = '';
+            preview.classList.remove('has-image');
+            if (!url) { preview.textContent = '🖼'; return; }
+            var img = document.createElement('img');
+            img.alt = 'Preview';
+            img.referrerPolicy = 'no-referrer';
+            img.onload = function () { preview.classList.add('has-image'); };
+            img.onerror = function () {
+                preview.innerHTML = '⚠';
+                setHint("Link accepted, but your browser couldn't load that image. The site may block embedding — try another link.", 'is-error');
+            };
+            img.src = url;
+            preview.appendChild(img);
+        }
+
+        function fetchImage() {
+            var value = input.value.trim();
+            lastChecked = input.value;
+            if (!value) { showPreview(''); hint.className = 'field-hint'; hint.innerHTML = defaultHint; return; }
+
+            btn.disabled = true;
+            btn.textContent = 'Fetching…';
+            setHint('Checking link…');
+
+            fetch(input.getAttribute('data-preview-url') + '?url=' + encodeURIComponent(value), { credentials: 'same-origin' })
+                .then(function (r) { if (!r.ok) throw new Error('bad status'); return r.json(); })
+                .then(function (data) {
+                    if (data.ok) {
+                        input.value = data.url || '';
+                        lastChecked = input.value;
+                        input.classList.remove('input-error');
+                        showPreview(data.url);
+                        if (data.url) setHint('✓ Image found' + (data.url !== value ? ' — link tidied up for you.' : '.'), 'is-ok');
+                    } else {
+                        showPreview('');
+                        setHint(data.error, 'is-error');
+                    }
+                })
+                .catch(function () {
+                    showPreview(value);
+                    setHint("Couldn't check the link from the server — showing it as-is.", 'is-error');
+                })
+                .then(function () {
+                    btn.disabled = false;
+                    btn.textContent = 'Fetch';
+                });
+        }
+
+        btn.addEventListener('click', fetchImage);
+        input.addEventListener('change', function () { if (input.value !== lastChecked) fetchImage(); });
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') { e.preventDefault(); fetchImage(); }
+        });
+    })();
+</script>
+</body>
+</html>

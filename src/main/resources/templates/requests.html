@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Requests - Auto Spare Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script th:src="@{/js/theme.js}"></script>
+</head>
+<body>
+<nav>
+    <span class="brand">Auto Spare Pro</span>
+    <a th:href="@{/}">Home</a>
+    <a th:href="@{/inventory}">Inventory</a>
+    <a th:href="@{/sales}">Sales</a>
+    <a th:href="@{/damaged-stock}">Damaged Stock</a>
+    <a th:href="@{/suppliers}">Suppliers</a>
+    <a th:href="@{/finance}">Finance</a>
+    <a th:href="@{/promotions}">Promotions</a>
+    <a th:href="@{/admin/users}">Users</a>
+    <a th:href="@{/admin/requests}">Requests</a>
+    <a th:href="@{/admin/payments}">Payments</a>
+    <a th:href="@{/catalog}">Catalog View</a>
+    <span class="nav-right">
+        <span class="nav-user">👤 <span th:text="${#authentication.name}"></span></span>
+        <form th:action="@{/logout}" method="post" class="logout-form">
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
+    </span>
+</nav>
+<div class="container">
+    <h1>Part Requests</h1>
+    <p class="subtitle">Review and approve customer part requests</p>
+
+    <p class="error-msg" th:if="${error}" th:text="${error}"></p>
+    <p class="logout-msg" th:if="${success}" th:text="${success}"></p>
+
+    <div class="card">
+        <table>
+            <thead>
+            <tr>
+                <th>Part</th>
+                <th>Part Number</th>
+                <th>Requested By</th>
+                <th>Qty</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${requests.isEmpty()}" class="empty-row">
+                <td colspan="7">No requests yet.</td>
+            </tr>
+            <tr th:each="r : ${requests}">
+                <td th:text="${r.partName}"></td>
+                <td th:text="${r.partNumber}"></td>
+                <td th:text="${r.username}"></td>
+                <td th:text="${r.quantity}"></td>
+                <td th:text="${r.requestedDate}"></td>
+                <td>
+                    <span class="stock-badge low-stock" th:if="${r.status.name() == 'PENDING'}" th:text="${r.status}"></span>
+                    <span class="stock-badge in-stock" th:if="${r.status.name() == 'APPROVED'}" th:text="${r.status}"></span>
+                    <span class="stock-badge out-stock" th:if="${r.status.name() == 'REJECTED'}" th:text="${r.status}"></span>
+                </td>
+                <td>
+                    <form th:if="${r.status.name() == 'PENDING'}" th:action="@{'/admin/requests/' + ${r.id} + '/approve'}" method="post" style="display:inline; margin:0;">
+                        <button type="submit">Approve</button>
+                    </form>
+                    <form th:if="${r.status.name() == 'PENDING'}" th:action="@{'/admin/requests/' + ${r.id} + '/reject'}" method="post" style="display:inline; margin:0;">
+                        <button type="submit" class="logout-btn">Reject</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

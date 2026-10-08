@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>My Requests - Auto Spare Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script th:src="@{/js/theme.js}"></script>
+</head>
+<body>
+<nav>
+    <span class="brand">Auto Spare Pro</span>
+    <a th:href="@{/catalog}">Catalog</a>
+    <a th:href="@{/my-requests}">My Requests</a>
+    <a th:href="@{/my-purchases}">My Purchases</a>
+    <a th:href="@{/quote}">My Quote</a>
+    <a th:href="@{/cart}">Cart<span th:if="${cartItemCount > 0}" class="cart-count" th:text="${cartItemCount}"></span></a>
+    <a th:href="@{/account}">Account</a>
+    <a sec:authorize="hasRole('ADMIN')" th:href="@{/}">Admin Dashboard</a>
+    <span class="nav-right">
+        <span class="nav-user">👤 <span th:text="${#authentication.name}"></span></span>
+        <form th:action="@{/logout}" method="post" class="logout-form">
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
+    </span>
+</nav>
+<div class="container">
+    <h1>My Requests</h1>
+    <p class="subtitle">Track the status of the parts you've requested</p>
+
+    <p class="error-msg" th:if="${error}" th:text="${error}"></p>
+    <p class="logout-msg" th:if="${success}" th:text="${success}"></p>
+
+    <div class="card">
+        <table>
+            <thead>
+            <tr>
+                <th>Part</th>
+                <th>Part Number</th>
+                <th>Qty</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Payment</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${requests.isEmpty()}" class="empty-row">
+                <td colspan="6">You haven't requested any parts yet. <a th:href="@{/catalog}">Browse the catalog</a>.</td>
+            </tr>
+            <tr th:each="r : ${requests}">
+                <td th:text="${r.partName}"></td>
+                <td th:text="${r.partNumber}"></td>
+                <td th:text="${r.quantity}"></td>
+                <td th:text="${r.requestedDate}"></td>
+                <td>
+                    <span class="stock-badge low-stock" th:if="${r.status.name() == 'PENDING'}" th:text="${r.status}"></span>
+                    <span class="stock-badge in-stock" th:if="${r.status.name() == 'APPROVED'}" th:text="${r.status}"></span>
+                    <span class="stock-badge out-stock" th:if="${r.status.name() == 'REJECTED'}" th:text="${r.status}"></span>
+                </td>
+                <td>
+                    <a th:if="${r.status.name() == 'APPROVED' and !paidPaymentIds.containsKey(r.id) and !refundedRequestIds.contains(r.id)}"
+                       th:href="@{'/payments/pay/' + ${r.id}}" class="edit-link">Pay Now</a>
+                    <a th:if="${r.status.name() == 'APPROVED' and paidPaymentIds.containsKey(r.id)}"
+                       th:href="@{'/payments/' + ${paidPaymentIds.get(r.id)}}" class="edit-link">View Receipt</a>
+                    <span th:if="${r.status.name() == 'APPROVED' and refundedRequestIds.contains(r.id)}" class="status-badge status-refunded">REFUNDED</span>
+                    <span th:if="${r.status.name() != 'APPROVED'}" class="nav-user">—</span>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

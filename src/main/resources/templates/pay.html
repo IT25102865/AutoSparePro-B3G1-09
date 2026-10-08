@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Payment - Auto Spare Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script th:src="@{/js/theme.js}"></script>
+</head>
+<body>
+<nav>
+    <span class="brand">Auto Spare Pro</span>
+    <a th:href="@{/catalog}">Catalog</a>
+    <a th:href="@{/my-requests}">My Requests</a>
+    <a th:href="@{/my-purchases}">My Purchases</a>
+    <a th:href="@{/quote}">My Quote</a>
+    <a th:href="@{/cart}">Cart<span th:if="${cartItemCount > 0}" class="cart-count" th:text="${cartItemCount}"></span></a>
+    <a th:href="@{/account}">Account</a>
+    <a sec:authorize="hasRole('ADMIN')" th:href="@{/}">Admin Dashboard</a>
+    <span class="nav-right">
+        <span class="nav-user">👤 <span th:text="${#authentication.name}"></span></span>
+        <form th:action="@{/logout}" method="post" class="logout-form">
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
+    </span>
+</nav>
+<div class="container">
+    <h1>Payment</h1>
+    <p class="subtitle" th:text="'For request: ' + ${request.partName} + ' (' + ${request.partNumber} + ')'"></p>
+
+    <p class="disclaimer">
+        🔒 Your payment is secure. Only the cardholder name and the last 4 digits of your card
+        are saved — the full card number and CVV are never stored.
+    </p>
+
+    <div class="pay-layout">
+        <div class="pay-form-col">
+            <div class="card">
+                <form th:action="@{'/payments/pay/' + ${request.id}}" method="post" id="payForm">
+                    <div class="field" style="margin-bottom:12px;">
+                        <label>Cardholder Name</label>
+                        <input type="text" name="cardHolderName" id="cardHolderName" required style="width:100%;">
+                    </div>
+                    <div class="field" style="margin-bottom:12px;">
+                        <label>Card Number</label>
+                        <input type="text" name="cardNumber" id="cardNumber" placeholder="0000 0000 0000 0000" required maxlength="19" style="width:100%;">
+                    </div>
+                    <div style="display:flex; gap:12px; margin-bottom:12px;">
+                        <div class="field" style="flex:1;">
+                            <label>Card Type</label>
+                            <select name="cardType" id="cardType" style="width:100%;">
+                                <option th:each="c : ${cardTypes}" th:value="${c}" th:text="${c}"></option>
+                            </select>
+                        </div>
+                        <div class="field" style="flex:1;">
+                            <label>Payment Method</label>
+                            <select name="paymentMethod" id="paymentMethod" style="width:100%;">
+                                <option value="CREDIT">Credit</option>
+                                <option value="DEBIT">Debit</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" style="width:100%;">🔒 Pay Now</button>
+                </form>
+            </div>
+
+            <div class="pay-summary">
+                <div class="summary-row">
+                    <span class="s-key">Request</span>
+                    <span class="s-val" th:text="${request.partNumber}"></span>
+                </div>
+                <div class="summary-row">
+                    <span class="s-key">Amount due</span>
+                    <span class="s-val" th:text="${@money.format(amount)}"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="pay-preview-col">
+            <div class="cc-preview">
+                <div class="cc-chip"></div>
+                <div class="cc-num" id="ccNum">•••• •••• •••• ••••</div>
+                <div class="cc-row">
+                    <div>
+                        <div class="cc-label">Card Holder</div>
+                        <div class="cc-val" id="ccName">Your Name</div>
+                    </div>
+                    <div class="cc-type" id="ccType">VISA</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var nameInput = document.getElementById('cardHolderName');
+    var numInput = document.getElementById('cardNumber');
+    var typeSelect = document.getElementById('cardType');
+    var ccName = document.getElementById('ccName');
+    var ccNum = document.getElementById('ccNum');
+    var ccType = document.getElementById('ccType');
+
+    function updatePreview() {
+        ccName.textContent = nameInput.value.trim() || 'Your Name';
+        ccType.textContent = typeSelect.value;
+        var digits = numInput.value.replace(/\D/g, '');
+        var last4 = digits.length >= 4 ? digits.slice(-4) : '';
+        ccNum.textContent = '•••• •••• •••• ' + (last4 || '••••');
+    }
+
+    function formatCardNumber() {
+        var digits = numInput.value.replace(/\D/g, '').substring(0, 16);
+        numInput.value = digits.replace(/(.{4})/g, '$1 ').trim();
+        updatePreview();
+    }
+
+    nameInput.addEventListener('input', updatePreview);
+    typeSelect.addEventListener('change', updatePreview);
+    numInput.addEventListener('input', formatCardNumber);
+</script>
+</body>
+</html>

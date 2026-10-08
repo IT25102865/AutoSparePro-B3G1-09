@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Quotation - Auto Spare Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script th:src="@{/js/theme.js}"></script>
+</head>
+<body>
+<nav class="no-print">
+    <span class="brand">Auto Spare Pro</span>
+    <a th:href="@{/}">Home</a>
+    <a th:href="@{/sales}">Sales</a>
+    <span class="nav-right">
+        <span class="nav-user">👤 <span th:text="${#authentication.name}"></span></span>
+        <form th:action="@{/logout}" method="post" class="logout-form">
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
+    </span>
+</nav>
+<div class="container">
+    <div class="quotation-actions no-print">
+        <a th:href="@{/sales}" class="cancel-link">← Back to Sales</a>
+        <button type="button" onclick="window.print()">🖨️ Print Quotation</button>
+    </div>
+
+    <div class="card quotation-card">
+        <div class="quotation-header">
+            <div>
+                <h1 style="margin-bottom:2px;">Auto Spare Pro</h1>
+                <p class="subtitle" style="margin:0;">Quotation / Invoice</p>
+            </div>
+            <div class="quotation-meta">
+                <div><span class="s-key">Invoice #</span> <strong th:text="${invoice.invoiceNumber}"></strong></div>
+                <div><span class="s-key">Date</span> <strong th:text="${invoice.date}"></strong></div>
+                <div><span class="s-key">Customer</span> <strong th:text="${invoice.customerName}"></strong></div>
+                <div><span class="s-key">Payment Method</span> <strong th:text="${invoice.paymentMethod}"></strong></div>
+            </div>
+        </div>
+
+        <table th:if="${!items.isEmpty()}" style="margin-top:18px;">
+            <thead>
+            <tr>
+                <th>Part</th>
+                <th>Part Number</th>
+                <th>Unit Price</th>
+                <th>Qty</th>
+                <th>Subtotal</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="i : ${items}">
+                <td th:text="${i.partName}"></td>
+                <td th:text="${i.partNumber}"></td>
+                <td>
+                    <span th:if="${i.discounted}" class="price-strike" th:text="${@money.format(i.originalPrice)}"></span>
+                    <span th:text="${@money.format(i.unitPrice)}" th:classappend="${i.discounted} ? ' price-now'"></span>
+                </td>
+                <td th:text="${i.quantity}"></td>
+                <td th:text="${@money.format(i.subtotal)}"></td>
+            </tr>
+            </tbody>
+        </table>
+
+        <p class="empty-row" th:if="${items.isEmpty()}" style="margin-top:18px;">
+            Itemized breakdown isn't available for this invoice — showing the total only.
+        </p>
+
+        <div class="pay-summary" style="margin-top:16px;">
+            <div class="summary-row" th:if="${invoice.discount > 0}">
+                <span class="s-key">Discount</span>
+                <span class="s-val savings-val" th:text="${@money.format(invoice.discount)}"></span>
+            </div>
+            <div class="summary-row">
+                <span class="s-key">Total</span>
+                <span class="s-val" th:text="${@money.format(invoice.totalAmount)}"></span>
+            </div>
+        </div>
+
+        <p class="subtitle quotation-footer">Thank you for your business — Auto Spare Pro.</p>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Catalog - Auto Spare Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script th:src="@{/js/theme.js}"></script>
+</head>
+<body>
+<nav>
+    <span class="brand">🔧 Auto Spare Pro</span>
+    <a th:href="@{/catalog}">Catalog</a>
+    <a th:href="@{/my-requests}">My Requests</a>
+    <a th:href="@{/my-purchases}">My Purchases</a>
+    <a th:href="@{/quote}">My Quote</a>
+    <a th:href="@{/cart}">Cart<span th:if="${cartItemCount > 0}" class="cart-count" th:text="${cartItemCount}"></span></a>
+    <a th:href="@{/account}">Account</a>
+    <a sec:authorize="hasRole('ADMIN')" th:href="@{/}">Admin Dashboard</a>
+    <span class="nav-right">
+        <span class="nav-user">👤 <span th:text="${#authentication.name}"></span></span>
+        <form th:action="@{/logout}" method="post" class="logout-form">
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
+    </span>
+</nav>
+
+<div class="catalog-hero">
+    <div class="container catalog-container">
+        <h1>Spare Parts Catalog</h1>
+        <p class="subtitle">Browse available parts and current stock</p>
+        <input type="text" id="catalogSearch" class="catalog-search" placeholder="🔍 Search by part name, number or brand...">
+    </div>
+</div>
+
+<div class="container catalog-container">
+    <p class="logout-msg" th:if="${param.requested}">Your request has been submitted. An admin will review it shortly.</p>
+    <p class="logout-msg" th:if="${param.added}">Added to your cart.</p>
+    <p class="logout-msg" th:if="${quoteSuccess}" th:text="${quoteSuccess}"></p>
+    <p class="error-msg" th:if="${quoteError}" th:text="${quoteError}"></p>
+
+    <div class="catalog-layout">
+        <aside class="catalog-sidebar">
+            <div class="sidebar-group">
+                <h3>Category</h3>
+                <div class="category-list">
+                    <a th:href="@{/catalog}"
+                       th:classappend="${selectedCategory == 'ALL'} ? ' active'"
+                       class="category-link">All Parts</a>
+                    <a th:each="c : ${categories}"
+                       th:href="@{/catalog(category=${c})}"
+                       th:classappend="${selectedCategory == c.name()} ? ' active'"
+                       class="category-link"
+                       th:text="${c}"></a>
+                </div>
+            </div>
+
+            <div class="sidebar-group">
+                <h3>Price Range (LKR)</h3>
+                <div class="price-range-inputs">
+                    <input type="number" id="priceMin" placeholder="Min" min="0">
+                    <span>—</span>
+                    <input type="number" id="priceMax" placeholder="Max" min="0">
+                </div>
+                <button type="button" id="priceApplyBtn" class="sidebar-apply-btn">Apply</button>
+            </div>
+
+            <div class="sidebar-group" th:if="${!brands.isEmpty()}">
+                <h3>Brand</h3>
+                <div class="brand-checklist" id="brandChecklist">
+                    <label class="brand-check" th:each="b : ${brands}">
+                        <input type="checkbox" class="brand-checkbox" th:value="${b}">
+                        <span th:text="${b}"></span>
+                    </label>
+                </div>
+            </div>
+
+            <button type="button" id="clearFiltersBtn" class="sidebar-clear-btn">Clear Filters</button>
+        </aside>
+
+        <div class="catalog-main">
+            <div class="catalog-grid" id="catalogGrid">
+                <p class="empty-row" th:if="${parts.isEmpty()}">No parts available in this category.</p>
+                <div class="part-card" th:each="p : ${parts}"
+                     th:with="discountPct=${discounts.get(p.id)}, hasDiscount=${discountPct != null}, finalPrice=${hasDiscount} ? ${p.price * (1 - discountPct / 100)} : ${p.price}"
+                     th:attr="data-search=${#strings.toLowerCase((p.partName ?: '') + ' ' + (p.partNumber ?: '') + ' ' + (p.brand ?: ''))},
+                              data-price=${finalPrice}, data-brand=${p.brand ?: ''}">
+                    <div class="part-image">
+                        <img th:if="${p.imageUrl != null and !#strings.isEmpty(p.imageUrl)}" th:src="${p.imageUrl}"
+                             th:alt="${p.partName}" loading="lazy" referrerpolicy="no-referrer">
+                        <div class="part-image-placeholder">🔧</div>
+                        <span class="stock-pill in-stock" th:if="${p.quantity gt p.reorderLevel}">In Stock</span>
+                        <span class="stock-pill low-stock" th:if="${p.quantity le p.reorderLevel and p.quantity gt 0}">Low Stock</span>
+                        <span class="stock-pill out-stock" th:if="${p.quantity eq 0}">Out of Stock</span>
+                        <span class="sale-badge" th:if="${hasDiscount}" th:text="'-' + ${#numbers.formatDecimal(discountPct, 1, 0)} + '%'"></span>
+                    </div>
+                    <div class="part-body">
+                        <div class="part-tags">
+                            <span class="tag" th:if="${p.brand}" th:text="${p.brand}"></span>
+                            <span class="tag" th:if="${p.vehicleModel}" th:text="${p.vehicleModel}"></span>
+                            <span class="tag tag-category" th:if="${p.category}" th:text="${p.category}"></span>
+                        </div>
+                        <div class="part-name" th:text="${p.partName}"></div>
+                        <div class="part-number">Part #: <span th:text="${p.partNumber}"></span></div>
+                        <div class="part-footer">
+                            <div class="part-price">
+                                <span class="price-original" th:if="${hasDiscount}" th:text="${@money.format(p.price)}"></span>
+                                <span th:classappend="${hasDiscount} ? 'price-sale'" th:text="${@money.format(finalPrice)}"></span>
+                            </div>
+                        </div>
+                        <form th:action="@{/cart/add}" method="post" class="cart-add-form">
+                            <input type="hidden" name="partId" th:value="${p.id}">
+                            <input type="number" name="quantity" value="1" min="1" class="cart-qty-input" aria-label="Quantity">
+                            <button type="submit" class="cart-add-btn" th:disabled="${p.quantity eq 0}">
+                                <span th:if="${p.quantity gt 0}">🛒 Add to Cart</span>
+                                <span th:if="${p.quantity eq 0}">Unavailable</span>
+                            </button>
+                        </form>
+                        <div class="part-secondary-actions">
+                            <form th:action="@{/catalog/request}" method="post" class="request-form">
+                                <input type="hidden" name="partNumber" th:value="${p.partNumber}">
+                                <button type="submit" class="request-btn" th:disabled="${p.quantity eq 0}">
+                                    <span th:if="${p.quantity gt 0}">Request Special Order</span>
+                                    <span th:if="${p.quantity eq 0}">Unavailable</span>
+                                </button>
+                            </form>
+                            <form th:action="@{/quote/add}" method="post" class="quote-add-form">
+                                <input type="hidden" name="partNumber" th:value="${p.partNumber}">
+                                <input type="number" name="quantity" value="1" min="1" class="quote-qty-input" aria-label="Quantity">
+                                <button type="submit" class="quote-add-btn" th:disabled="${p.quantity eq 0}">+ Add to Quote</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <p class="empty-row" id="noMatchMsg" style="display:none;">No parts match your filters.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    var searchInput = document.getElementById('catalogSearch');
+    var priceMin = document.getElementById('priceMin');
+    var priceMax = document.getElementById('priceMax');
+    var noMatchMsg = document.getElementById('noMatchMsg');
+
+    function activeBrands() {
+        return Array.prototype.map.call(
+            document.querySelectorAll('.brand-checkbox:checked'),
+            function (cb) { return cb.value; }
+        );
+    }
+
+    function applyFilters() {
+        var term = (searchInput.value || '').toLowerCase();
+        var min = priceMin.value !== '' ? parseFloat(priceMin.value) : null;
+        var max = priceMax.value !== '' ? parseFloat(priceMax.value) : null;
+        var brands = activeBrands();
+        var visibleCount = 0;
+
+        document.querySelectorAll('.part-card').forEach(function (card) {
+            var haystack = card.getAttribute('data-search') || '';
+            var price = parseFloat(card.getAttribute('data-price')) || 0;
+            var brand = card.getAttribute('data-brand') || '';
+
+            var matchesSearch = haystack.indexOf(term) !== -1;
+            var matchesMin = min === null || price >= min;
+            var matchesMax = max === null || price <= max;
+            var matchesBrand = brands.length === 0 || brands.indexOf(brand) !== -1;
+
+            var visible = matchesSearch && matchesMin && matchesMax && matchesBrand;
+            card.style.display = visible ? '' : 'none';
+            if (visible) visibleCount++;
+        });
+
+        noMatchMsg.style.display = visibleCount === 0 ? '' : 'none';
+    }
+
+    searchInput.addEventListener('input', applyFilters);
+    document.getElementById('priceApplyBtn').addEventListener('click', applyFilters);
+    document.querySelectorAll('.brand-checkbox').forEach(function (cb) {
+        cb.addEventListener('change', applyFilters);
+    });
+    document.getElementById('clearFiltersBtn').addEventListener('click', function () {
+        searchInput.value = '';
+        priceMin.value = '';
+        priceMax.value = '';
+        document.querySelectorAll('.brand-checkbox').forEach(function (cb) { cb.checked = false; });
+        applyFilters();
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Cart - Auto Spare Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script th:src="@{/js/theme.js}"></script>
+</head>
+<body>
+<nav>
+    <span class="brand">Auto Spare Pro</span>
+    <a th:href="@{/catalog}">Catalog</a>
+    <a th:href="@{/my-requests}">My Requests</a>
+    <a th:href="@{/my-purchases}">My Purchases</a>
+    <a th:href="@{/cart}">Cart<span th:if="${cartItemCount > 0}" class="cart-count" th:text="${cartItemCount}"></span></a>
+    <a th:href="@{/account}">Account</a>
+    <a sec:authorize="hasRole('ADMIN')" th:href="@{/}">Admin Dashboard</a>
+    <span class="nav-right">
+        <span class="nav-user">👤 <span th:text="${#authentication.name}"></span></span>
+        <form th:action="@{/logout}" method="post" class="logout-form">
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
+    </span>
+</nav>
+<div class="container">
+    <h1>Your Cart</h1>
+    <p class="subtitle">Review your items before checking out</p>
+
+    <div class="card">
+        <table>
+            <thead>
+            <tr>
+                <th>Part</th>
+                <th>Part Number</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Subtotal</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${items.isEmpty()}" class="empty-row">
+                <td colspan="6">Your cart is empty. <a th:href="@{/catalog}">Browse the catalog</a>.</td>
+            </tr>
+            <tr th:each="i : ${items}">
+                <td th:text="${i.partName}"></td>
+                <td th:text="${i.partNumber}"></td>
+                <td>
+                    <span th:if="${i.discounted}" class="price-strike" th:text="${@money.format(i.originalPrice)}"></span>
+                    <span th:text="${@money.format(i.price)}" th:classappend="${i.discounted} ? ' price-now'"></span>
+                    <span class="tag" th:if="${i.discounted}">SALE</span>
+                </td>
+                <td>
+                    <form th:action="@{/cart/update}" method="post" style="display:flex; gap:6px; align-items:center; margin:0;">
+                        <input type="hidden" name="partId" th:value="${i.partId}">
+                        <input type="number" name="quantity" th:value="${i.quantity}" min="1" style="width:56px;">
+                        <button type="submit" class="edit-link" style="border:none; cursor:pointer;">Update</button>
+                    </form>
+                </td>
+                <td th:text="${@money.format(i.subtotal)}"></td>
+                <td class="actions">
+                    <form th:action="@{'/cart/remove/' + ${i.partId}}" method="post" style="display:inline; margin:0;">
+                        <button type="submit" class="logout-btn">Remove</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="pay-summary" th:if="${!items.isEmpty()}">
+        <div class="summary-row" th:if="${totalSavings > 0}">
+            <span class="s-key">You're saving</span>
+            <span class="s-val savings-val" th:text="${@money.format(totalSavings)}"></span>
+        </div>
+        <div class="summary-row">
+            <span class="s-key">Total</span>
+            <span class="s-val" th:text="${@money.format(total)}"></span>
+        </div>
+        <a th:href="@{/cart/checkout}" class="checkout-btn">Proceed to Checkout</a>
+    </div>
+</div>
+</body>
+</html>

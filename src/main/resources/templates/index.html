@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Auto Spare Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script th:src="@{/js/theme.js}"></script>
+</head>
+<body>
+<nav>
+    <span class="brand">Auto Spare Pro</span>
+    <a th:href="@{/}">Home</a>
+    <a th:href="@{/inventory}">Inventory</a>
+    <a th:href="@{/sales}">Sales</a>
+    <a th:href="@{/damaged-stock}">Damaged Stock</a>
+    <a th:href="@{/suppliers}">Suppliers</a>
+    <a th:href="@{/finance}">Finance</a>
+    <a th:href="@{/promotions}">Promotions</a>
+    <a th:href="@{/admin/users}">Users</a>
+    <a th:href="@{/admin/requests}">Requests</a>
+    <a th:href="@{/admin/payments}">Payments</a>
+    <a th:href="@{/catalog}">Catalog View</a>
+    <span class="nav-right">
+        <span class="nav-user">👤 <span th:text="${#authentication.name}"></span></span>
+        <form th:action="@{/logout}" method="post" class="logout-form">
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
+    </span>
+</nav>
+<div class="container">
+    <h1>Auto Spare Pro</h1>
+    <p class="subtitle">Vehicle Spare Parts Management System — Lanka Auto Parts (Pvt) Ltd.</p>
+
+    <div class="home-grid">
+        <a class="home-card" th:href="@{/inventory}">
+            <div class="icon">🔧</div>
+            <div class="title">Inventory</div>
+            <div class="desc">Register parts, track stock and reorder levels</div>
+        </a>
+        <a class="home-card" th:href="@{/sales}">
+            <div class="icon">🧾</div>
+            <div class="title">Sales</div>
+            <div class="desc">Record customer invoices and payments</div>
+        </a>
+        <a class="home-card" th:href="@{/damaged-stock}">
+            <div class="icon">📦</div>
+            <div class="title">Damaged Stock</div>
+            <div class="desc">Log damaged or written-off items</div>
+        </a>
+        <a class="home-card" th:href="@{/suppliers}">
+            <div class="icon">🚚</div>
+            <div class="title">Suppliers</div>
+            <div class="desc">Maintain supplier contact and part records</div>
+        </a>
+        <a class="home-card" th:href="@{/finance}">
+            <div class="icon">💰</div>
+            <div class="title">Finance</div>
+            <div class="desc">Track transactions linked to sales</div>
+        </a>
+        <a class="home-card" th:href="@{/promotions}">
+            <div class="icon">🏷️</div>
+            <div class="title">Promotions</div>
+            <div class="desc">Create and manage discount campaigns</div>
+        </a>
+        <a class="home-card" th:href="@{/admin/users}">
+            <div class="icon">👥</div>
+            <div class="title">Manage Users</div>
+            <div class="desc">Create staff accounts and assign roles</div>
+        </a>
+        <a class="home-card" th:href="@{/admin/requests}">
+            <div class="icon">📥</div>
+            <div class="title">Part Requests</div>
+            <div class="desc">Review and approve customer part requests</div>
+        </a>
+        <a class="home-card" th:href="@{/admin/payments}">
+            <div class="icon">💳</div>
+            <div class="title">Payments</div>
+            <div class="desc">View payments recorded against approved requests and cart checkouts</div>
+        </a>
+        <a class="home-card" th:href="@{/catalog}">
+            <div class="icon">🛒</div>
+            <div class="title">Customer Catalog</div>
+            <div class="desc">Preview the customer-facing parts catalog</div>
+        </a>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Payment - Auto Spare Pro</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<nav>
+    <span class="brand">Auto Spare Pro</span>
+    <a th:href="@{/}">Home</a>
+    <a th:href="@{/inventory}">Inventory</a>
+    <a th:href="@{/sales}">Sales</a>
+    <a th:href="@{/damaged-stock}">Damaged Stock</a>
+    <a th:href="@{/suppliers}">Suppliers</a>
+    <a th:href="@{/finance}">Finance</a>
+    <a th:href="@{/promotions}">Promotions</a>
+    <a th:href="@{/admin/users}">Users</a>
+    <a th:href="@{/admin/requests}">Requests</a>
+    <a th:href="@{/admin/payments}">Payments</a>
+    <a th:href="@{/catalog}">Catalog View</a>
+    <span class="nav-right">
+        <span class="nav-user">👤 <span th:text="${#authentication.name}"></span></span>
+        <form th:action="@{/logout}" method="post" class="logout-form">
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
+    </span>
+</nav>
+<div class="container" th:if="${payment != null}">
+    <h1>Edit Payment</h1>
+    <p class="subtitle" th:text="'Invoice ' + ${payment.invoiceNumber} + ' — ' + ${payment.username}"></p>
+
+    <div class="card">
+        <form class="add-form" th:action="@{'/admin/payments/edit/' + ${payment.id}}" method="post">
+            <div class="field">
+                <label>Cardholder Name</label>
+                <input type="text" name="cardHolderName" th:value="${payment.cardHolderName}" required>
+            </div>
+            <div class="field">
+                <label>Card Last 4 Digits</label>
+                <input type="text" name="cardLast4" th:value="${payment.cardLast4}" maxlength="4" pattern="[0-9]{0,4}">
+            </div>
+            <div class="field">
+                <label>Card Type</label>
+                <select name="cardType">
+                    <option th:each="c : ${cardTypes}" th:value="${c}" th:text="${c}" th:selected="${c == payment.cardType}"></option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Payment Method</label>
+                <select name="paymentMethod">
+                    <option value="CREDIT" th:selected="${payment.paymentMethod == 'CREDIT'}">Credit</option>
+                    <option value="DEBIT" th:selected="${payment.paymentMethod == 'DEBIT'}">Debit</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Amount</label>
+                <input type="number" step="0.01" name="amount" th:value="${payment.amount}" required>
+            </div>
+            <div class="field">
+                <label>Status</label>
+                <select name="status">
+                    <option th:each="s : ${statuses}" th:value="${s}" th:text="${s}" th:selected="${s == payment.status}"></option>
+                </select>
+            </div>
+            <button type="submit">Update Payment</button>
+            <a th:href="@{/admin/payments}" class="cancel-link">Cancel</a>
+        </form>
+    </div>
+</div>
+<div class="container" th:if="${payment == null}">
+    <div class="card">
+        <p class="subtitle" style="margin:0;">Payment not found.</p>
+    </div>
+</div>
+</body>
+</html>
