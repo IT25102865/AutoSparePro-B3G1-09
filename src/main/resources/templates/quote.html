@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>My Quotation - Auto Spare Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script th:src="@{/js/theme.js}"></script>
+</head>
+<body id="quotePage">
+<nav class="no-print">
+    <span class="brand">🔧 Auto Spare Pro</span>
+    <a th:href="@{/catalog}">Catalog</a>
+    <a th:href="@{/my-requests}">My Requests</a>
+    <a th:href="@{/my-purchases}">My Purchases</a>
+    <a th:href="@{/quote}">My Quote</a>
+    <a th:href="@{/cart}">Cart<span th:if="${cartItemCount > 0}" class="cart-count" th:text="${cartItemCount}"></span></a>
+    <a th:href="@{/account}">Account</a>
+    <a sec:authorize="hasRole('ADMIN')" th:href="@{/}">Admin Dashboard</a>
+    <span class="nav-right">
+        <span class="nav-user">👤 <span th:text="${#authentication.name}"></span></span>
+        <form th:action="@{/logout}" method="post" class="logout-form">
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
+    </span>
+</nav>
+
+<div class="container quote-print-area">
+    <div class="quote-print-header">
+        <h1>Price Quotation</h1>
+        <p class="subtitle">
+            Prepared for <span th:text="${#authentication.name}"></span>
+            &nbsp;·&nbsp; <span th:text="${today}"></span>
+        </p>
+        <p class="quote-disclaimer">
+            This is a price quotation for reference only — it is not an order and does not reserve stock.
+            To actually purchase, use the "Request" button on the Catalog page.
+        </p>
+    </div>
+
+    <div class="card">
+        <table>
+            <thead>
+            <tr>
+                <th>Part Number</th>
+                <th>Part Name</th>
+                <th>Unit Price</th>
+                <th>Quantity</th>
+                <th>Line Total</th>
+                <th class="no-print">Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${lines.isEmpty()}" class="empty-row">
+                <td colspan="6">Your quotation is empty. Add parts from the Catalog.</td>
+            </tr>
+            <tr th:each="l : ${lines}">
+                <td th:text="${l.partNumber}"></td>
+                <td th:text="${l.partName}"></td>
+                <td th:text="${@money.format(l.price)}"></td>
+                <td th:text="${l.quantity}"></td>
+                <td th:text="${@money.format(l.lineTotal)}"></td>
+                <td class="actions no-print">
+                    <form th:action="@{/quote/remove}" method="post" style="margin:0;">
+                        <input type="hidden" name="partNumber" th:value="${l.partNumber}">
+                        <button type="submit" class="logout-btn">Remove</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+            <tfoot th:if="${!lines.isEmpty()}">
+            <tr class="quote-total-row">
+                <td colspan="4" class="quote-total-label">Estimated Total</td>
+                <td class="quote-total-value" th:text="${@money.format(total)}"></td>
+                <td class="no-print"></td>
+            </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <div class="quote-actions no-print" th:if="${!lines.isEmpty()}">
+        <button type="button" class="print-btn" onclick="window.print()">🖨️ Print Quotation</button>
+        <form th:action="@{/quote/clear}" method="post" style="margin:0;" onsubmit="return confirm('Clear your entire quotation?');">
+            <button type="submit" class="report-btn">Clear Quotation</button>
+        </form>
+        <a th:href="@{/catalog}" class="cancel-link">Continue Browsing</a>
+    </div>
+</div>
+</body>
+</html>
